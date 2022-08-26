@@ -12,12 +12,13 @@ def seed_everything(seed=0):
     np.random.seed(seed)
 seed_everything(seed)
 
-train=pd.read_csv('train_all.csv')
-ID=np.linspace(1,len(train),len(train)).astype(int)
-train['ID']=ID
+train=pd.read_csv('train.csv',sep=';')
+val=pd.read_csv('test.csv',sep=';')
+
+merged=pd.read_csv('train_all.csv')
 
 print(list(train.columns))
-#число дней до текущего года
+
 pref_days = [0]
 for year in range(2020, 2021):
     pref_days.append(pd.Timestamp(f'{year}-12-31').dayofyear)
@@ -50,7 +51,18 @@ for col in add_columns:
 train = train.sort_values(by='ind_date')
 train=train.drop('period',axis=1)
 
+add_columns = ['year', 'month',  'dayofyear', 'season', 'ind_date']
+val[add_columns] = list(val['period'].apply(prepare))
+for col in add_columns:
+    val[col] = val[col].astype(np.int32)
+val = val.sort_values(by='ind_date')
+val=val.drop('period',axis=1)
+
 train.subject_type.replace({"Автономный Округ": 'Республика',
+                           "Автономная Область": 'Республика',
+                           "Край": 'Область',
+                           }, inplace=True)
+val.subject_type.replace({"Автономный Округ": 'Республика',
                            "Автономная Область": 'Республика',
                            "Край": 'Область',
                            }, inplace=True)
@@ -60,18 +72,37 @@ train.subject_type.replace({"Автономный Округ": 'Республи
 train['subject_or_city']='subject'
 train.loc[train['subject_type']=='Город','subject_or_city']='city'
 
+val['subject_or_city']='subject'
+val.loc[val['subject_type']=='Город','subject_or_city']='city'
 
+f_cols=['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17', 'f18', 'f19', 'f20', 'f21', 'f22', 'f23', 'f24', 'f25', 'f26', 'f27', 'f28', 'f29', 'f30']
 
+maybe_imbalance=['f30','f23','f14','f5']
 
+#train=train.drop(columns=maybe_imbalance)
+to_drop = []
+for i in range(len(train.columns)):
+    a = train[train.columns[i]].value_counts().values[0]
+    a = a / len(train) * 100
+    # print(train.columns[i])
+    # print(a)
+    if a > 75 and train.columns[i] not in ['subject_or_city','label']:
+        to_drop.append(train.columns[i])
 
+train = train.drop(columns=to_drop)
+val = val.drop(columns=to_drop)
+print(list(train.columns))
 
-
-train=train.dropna()
-
-
+for f in f_cols:
+    if f in train.columns:
+        train[f] = train[f].fillna(
+            train.groupby('ind_date')[f].transform('median'))
+        val[f] = val[f].fillna(
+            val.groupby('ind_date')[f].transform('median'))
 
 kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
 train=pd.get_dummies(train,columns=kitties)
+val=pd.get_dummies(val,columns=kitties)
 
 from sklearn.preprocessing import LabelEncoder
 
@@ -79,20 +110,12 @@ from sklearn.preprocessing import LabelEncoder
 le.fit(train['hex'])
 train['hex']=le.transform(train['hex'])'''
 
-from sklearn.model_selection import train_test_split
 
+X_train=train.drop('label',axis=1)
+y_train=train['label']
 
-
-X=train.drop('label',axis=1)
-y=train[['label','ID']]
-#print(train['hex'])
-
-
-
-#print(list(X.columns))
-X=X.drop('ID',axis=1)
-y=y.drop('ID',axis=1)
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=seed)
+X_val=train.drop('label',axis=1)
+y_val=train['label']
 
 from catboost import CatBoostClassifier
 
