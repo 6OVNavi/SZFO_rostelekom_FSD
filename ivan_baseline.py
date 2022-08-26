@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 import pandas as pd
@@ -71,14 +70,14 @@ train=train.dropna()
 
 
 
-kitties=['subject_type','subject_name','city_name','subject_or_city']
+kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
 train=pd.get_dummies(train,columns=kitties)
 
 from sklearn.preprocessing import LabelEncoder
 
-le=LabelEncoder()
+'''le=LabelEncoder()
 le.fit(train['hex'])
-train['hex']=le.transform(train['hex'])
+train['hex']=le.transform(train['hex'])'''
 
 from sklearn.model_selection import train_test_split
 
@@ -91,10 +90,22 @@ y=train[['label','ID']]
 
 
 #print(list(X.columns))
-
+X=X.drop('ID',axis=1)
+y=y.drop('ID',axis=1)
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=seed)
 
-X_temp=X_train.merge(y_train,on='ID')
+from catboost import CatBoostClassifier
+
+cb=CatBoostClassifier(eval_metric='Precision',random_state=seed,auto_class_weights='Balanced')#class_weights=[0.1,0.97])
+cb.fit(X_train,y_train,eval_set=(X_val,y_val))
+print(cb.best_score_)
+pred=cb.predict(X_val)
+from sklearn.metrics import precision_score, accuracy_score,recall_score
+#print(precision_score(pred,y_val['label']),'-------precision')
+print(precision_score(y_val['label'],pred),'-------precision')
+print(accuracy_score(y_val['label'],pred),'-------accuracy')
+print(recall_score(y_val['label'],pred),'-------recall')
+'''X_temp=X_train.merge(y_train,on='ID')
 
 X1=X_temp[X_temp['label']==1]
 X2=X_temp[X_temp['label']==0]
@@ -105,7 +116,7 @@ print(len(X1),len(X2),'-@@-')
 
 X_val=X_val.drop('ID',axis=1)
 
-from catboost import CatBoostClassifier
+
 
 #model = CatBoostClassifier(iterations=300, use_best_model=True, eval_metric='Precision', random_state=seed,learning_rate=0.001)
 
@@ -133,11 +144,12 @@ val_tests=val_tests/fraction
 val_tests=list(map(lambda x: round(x),val_tests))
 print()
 
-from sklearn.metrics import precision_score
+
 
 print(precision_score(y_val['label'],val_tests),'-------precision')
+print(best_its)
 #pred=pred/fraction
 #pred = list(map(lambda x: round(x), pred))
-
+'''
 
 
