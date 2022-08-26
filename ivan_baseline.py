@@ -125,9 +125,9 @@ print(cb.best_score_)
 pred=cb.predict(X_val)
 from sklearn.metrics import precision_score, accuracy_score,recall_score
 #print(precision_score(pred,y_val['label']),'-------precision')
-print(precision_score(y_val['label'],pred),'-------precision')
-print(accuracy_score(y_val['label'],pred),'-------accuracy')
-print(recall_score(y_val['label'],pred),'-------recall')
+print(precision_score(y_val,pred),'-------precision')
+print(accuracy_score(y_val,pred),'-------accuracy')
+print(recall_score(y_val,pred),'-------recall')
 '''X_temp=X_train.merge(y_train,on='ID')
 
 X1=X_temp[X_temp['label']==1]
