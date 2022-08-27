@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 import random,os
-
+pd.set_option('display.max_columns', None)
 seed=42
 
 def seed_everything(seed=0):
@@ -14,6 +14,15 @@ seed_everything(seed)
 
 train=pd.read_csv('train.csv',sep=';')
 val=pd.read_csv('test.csv',sep=';')
+
+euro=pd.read_excel('euro.xlsx')
+dollar=pd.read_excel('dollar.xlsx')
+print(euro)
+euro['data']=  euro['data'].apply(lambda x: str(x)[:-9].split('-')[0]+'-'+str(x)[:-9].split('-')[1]+'-'+str(x)[:-9].split('-')[2])
+dollar['data']=  dollar['data'].apply(lambda x: str(x)[:-9].split('-')[0]+'-'+str(x)[:-9].split('-')[1]+'-'+str(x)[:-9].split('-')[2])
+
+euro.columns = euro.columns.str.replace('data', 'period')
+dollar.columns = dollar.columns.str.replace('data', 'period')
 
 merged=pd.read_csv('train_all.csv')
 
@@ -58,6 +67,55 @@ for col in add_columns:
 val = val.sort_values(by='ind_date')
 val=val.drop('period',axis=1)
 
+add_columns = ['year', 'month',  'dayofyear', 'season', 'ind_date']
+euro[add_columns] = list(euro['period'].apply(prepare))
+for col in add_columns:
+    euro[col] = euro[col].astype(np.int32)
+euro = euro.sort_values(by='ind_date')
+euro=euro.set_index('ind_date')
+
+add_columns = ['year', 'month',  'dayofyear', 'season', 'ind_date']
+dollar[add_columns] = list(dollar['period'].apply(prepare))
+for col in add_columns:
+    dollar[col] = dollar[col].astype(np.int32)
+dollar = dollar.sort_values(by='ind_date')
+dollar=dollar.set_index('ind_date')
+
+'''def get_curs_euro_now(ind_date):
+    #print(euro.loc[ind_date-3].shift(7))
+    return np.nanmean(euro.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+def get_curs_euro_before(ind_date):
+    return np.nanmean(euro.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+def get_curs_dollar_now(ind_date):
+    return np.nanmean(dollar.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+def get_curs_dollar_before(ind_date):
+    return np.nanmean(dollar.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+
+
+train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
+train['euro_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_euro_before(x))
+train['dollar_curs_cur']=train['ind_date'].apply(lambda x: get_curs_dollar_now(x))
+train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar_before(x))'''
+
+'''train['euro_curs_cur']=0
+train['euro_curs_last_week']=0
+
+train['dollar_curs_cur']=0
+train['dollar_curs_last_week']=0
+for i in range(len(train)):
+    train['euro_curs_cur'][i]=np.nanmean(euro.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+    train['euro_curs_last_week'][i]=np.nanmean(euro.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+
+    train['dollar_curs_cur'][i]=np.nanmean(dollar.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+    train['dollar_curs_last_week'][i]=np.nanmean(dollar.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+print(len(train[train['euro_curs_cur']>0]))'''
+#for row in train:
+
+#train=train[train['curs']>0]
+#print(train)
+#print(len(train))
+print(train)
+#exit(0)
 train.subject_type.replace({"Автономный Округ": 'Республика',
                            "Автономная Область": 'Республика',
                            "Край": 'Область',
@@ -104,6 +162,19 @@ kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
 train=pd.get_dummies(train,columns=kitties)
 val=pd.get_dummies(val,columns=kitties)
 
+for i in val.columns:
+    if i not in train.columns:
+        train[i]=0
+for i in train.columns:
+    if i not in val.columns:
+        val[i]=0
+#val=val.drop('label',axis=1)
+
+train=train.sort_index(axis=1)
+val=val.sort_index(axis=1)
+
+print(list(train.columns))
+print(list(val.columns))
 from sklearn.preprocessing import LabelEncoder
 
 '''le=LabelEncoder()
@@ -114,12 +185,12 @@ train['hex']=le.transform(train['hex'])'''
 X_train=train.drop('label',axis=1)
 y_train=train['label']
 
-X_val=train.drop('label',axis=1)
-y_val=train['label']
+X_val=val.drop('label',axis=1)
+y_val=val['label']
 
 from catboost import CatBoostClassifier
 
-cb=CatBoostClassifier(eval_metric='Precision',random_state=seed,auto_class_weights='Balanced')#class_weights=[0.1,0.97])
+cb=CatBoostClassifier(eval_metric='Precision:use_weights=True',random_state=seed,auto_class_weights='Balanced')#class_weights=[0.1,0.97])
 cb.fit(X_train,y_train,eval_set=(X_val,y_val))
 print(cb.best_score_)
 pred=cb.predict(X_val)
