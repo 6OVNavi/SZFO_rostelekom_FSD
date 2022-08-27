@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 import random,os
+import seaborn as sns
+import matplotlib.pyplot as plt
 pd.set_option('display.max_columns', None)
 seed=42
 
@@ -84,9 +86,9 @@ for col in add_columns:
 dollar = dollar.sort_values(by='ind_date')
 dollar=dollar.set_index('ind_date')
 
+#print(euro)
 
-
-def get_curs_euro_now(ind_date):
+'''def get_curs_euro_now(ind_date):
     return np.nanmean(euro.loc[ind_date-7:ind_date]['curs'])
 def get_curs_euro_before(ind_date):
     return np.nanmean(euro.loc[ind_date-14:ind_date-8]['curs'])
@@ -106,7 +108,8 @@ val['euro_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_euro_before(
 val['dollar_curs_cur']=val['ind_date'].apply(lambda x: get_curs_dollar_now(x))
 val['dollar_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_dollar_before(x))
 
-
+print(train.isna().sum())
+print(val.isna().sum())'''
 
 train.subject_type.replace({"Автономный Округ": 'Республика',
                            "Автономная Область": 'Республика',
@@ -128,6 +131,7 @@ val.loc[val['subject_type']=='Город','subject_or_city']='city'
 f_cols=['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17', 'f18', 'f19', 'f20', 'f21', 'f22', 'f23', 'f24', 'f25', 'f26', 'f27', 'f28', 'f29', 'f30']
 
 maybe_imbalance=['f30','f23','f14','f5']
+
 kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
 #print(len(train))
 #print(train)
@@ -148,6 +152,7 @@ to_drop = []
 for i in train.columns:
     if (train[i].isna().sum() > len(train) * 0.15):
         to_drop.append(i)
+
 train = train.drop(columns=to_drop)
 val = val.drop(columns=to_drop)
 
@@ -158,9 +163,11 @@ for f in f_cols:
         val[f] = val[f].fillna(
             val.groupby('ind_date')[f].transform('median'))
 
+train['rate']=0.0
+for i in range(len(train.subject_name.value_counts().keys())):
+    train.loc[train['subject_name']==train.subject_name.value_counts().keys()[i], 'rate']=train[train['subject_name']==train.subject_name.value_counts().keys()[0]]['label'].sum()/train.subject_name.value_counts()[i]
 
-import seaborn as sns
-import matplotlib.pyplot as plt
+
 print(train.columns)
 '''sns.set_theme(font_scale=0.6)
 plt.figure(figsize=(10, 10))
@@ -168,8 +175,55 @@ sns.heatmap(train.corr(), annot=True,linewidths=1)
 plt.tight_layout()
 plt.show()
 '''
+
+games=['alchemist','lostark','tanks','warface','warplane','warship']
+
+def twitch_viewers_now(ind_date):
+    return np.nanmean(df2.loc[ind_date-7:ind_date]['Twitch Viewers'])
+def twitch_viewers_before(ind_date):
+    return np.nanmean(df2.loc[ind_date-14:ind_date-8]['Twitch Viewers'])
+def players_now(ind_date):
+    return np.nanmean(df2.loc[ind_date-7:ind_date]['Players'])
+def players_before(ind_date):
+    return np.nanmean(df2.loc[ind_date-14:ind_date-8]['Players'])
+
+
+for game in games:
+    df2=pd.read_csv(f'{game}.csv', sep=';')
+    df2.DateTime=df2.DateTime.apply(lambda x: x.split(' ')[0])
+    df2=df2.rename(columns={'DateTime': 'period'})
+
+    for i in range(len(df2)):
+        if int(df2.period[i].split('-')[0]) < 2021:
+            df2 = df2.drop(i, axis=0)
+    df2 = df2.reset_index(drop=True)
+
+    df2[add_columns] = list(df2['period'].apply(prepare))
+
+    for col in add_columns:
+        df2[col] = df2[col].astype(np.int32)
+    df2 = df2.sort_values(by='ind_date')
+    df2 = df2.set_index('ind_date')
+
+    train[f'twitch_viewers_{game}_now'] = train['ind_date'].apply(lambda x: twitch_viewers_now(x))
+    train[f'twitch_viewers_{game}_last_week'] = train['ind_date'].apply(lambda x: twitch_viewers_before(x))
+    train[f'players_{game}_now'] = train['ind_date'].apply(lambda x: players_now(x))
+    train[f'players_{game}_last_week'] = train['ind_date'].apply(lambda x: players_before(x))
+
+    val[f'twitch_viewers_{game}_now'] = val['ind_date'].apply(lambda x: twitch_viewers_now(x))
+    val[f'twitch_viewers_{game}_last_week'] = val['ind_date'].apply(lambda x: twitch_viewers_before(x))
+    val[f'players_{game}_now'] = val['ind_date'].apply(lambda x: players_now(x))
+    val[f'players_{game}_last_week'] = val['ind_date'].apply(lambda x: players_before(x))
+
+train.to_csv('train_games.csv',index=False)
+val.to_csv('val_games.csv',index=False)
+
+
 train=pd.get_dummies(train,columns=kitties)
 val=pd.get_dummies(val,columns=kitties)
+
+
+
 
 for i in val.columns:
     if i not in train.columns:
@@ -191,7 +245,7 @@ y_val=val['label']
 
 from catboost import CatBoostClassifier
 
-cb=CatBoostClassifier(eval_metric='Precision:use_weights=True',random_state=seed,auto_class_weights='Balanced')#class_weights=[0.1,0.97])
+cb=CatBoostClassifier(iterations=10000,eval_metric='Precision:use_weights=False',random_state=seed,auto_class_weights='Balanced')#class_weights=[0.1,0.97])
 cb.fit(X_train,y_train,eval_set=(X_val,y_val))
 print(cb.best_score_)
 pred=cb.predict(X_val)
