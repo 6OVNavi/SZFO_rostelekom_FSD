@@ -91,14 +91,12 @@ def get_curs_euro_now(ind_date):
 def get_curs_euro_before(ind_date):
     return np.nanmean(euro.loc[ind_date-14:ind_date-8]['curs'])
 def get_curs_dollar_now(ind_date):
-    np.nanmean(dollar.loc[ind_date-7:ind_date]['curs'])
+    return np.nanmean(dollar.loc[ind_date-7:ind_date]['curs'])
 def get_curs_dollar_before(ind_date):
-    np.nanmean(dollar.loc[ind_date-14:ind_date-8]['curs'])
+    return np.nanmean(dollar.loc[ind_date-14:ind_date-8]['curs'])
 
 
 train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
-print(train['euro_curs_cur'].value_counts())
-print(train['ind_date'].value_counts())
 train['euro_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_euro_before(x))
 train['dollar_curs_cur']=train['ind_date'].apply(lambda x: get_curs_dollar_now(x))
 train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar_before(x))
@@ -131,7 +129,8 @@ f_cols=['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12
 
 maybe_imbalance=['f30','f23','f14','f5']
 kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
-#train=train.drop(columns=maybe_imbalance)
+#print(len(train))
+#print(train)
 to_drop = []
 for i in range(len(train.columns)):
     a = train[train.columns[i]].value_counts().values[0]
