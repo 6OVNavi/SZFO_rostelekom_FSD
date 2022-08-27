@@ -83,15 +83,15 @@ dollar=dollar.set_index('ind_date')
 
 
 
-'''def get_curs_euro_now(ind_date):
+def get_curs_euro_now(ind_date):
     #print(euro.loc[ind_date-3].shift(7))
-    return np.nanmean(euro.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+    return np.nanmean(euro.loc[train['ind_date'][i]-7:train['ind_date'][i]]['curs'])
 def get_curs_euro_before(ind_date):
-    return np.nanmean(euro.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+    return np.nanmean(euro.loc[train['ind_date'][i]-14:train['ind_date'][i]-8]['curs'])
 def get_curs_dollar_now(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
+    return np.nanmean(dollar.loc[train['ind_date'][i]-7:train['ind_date'][i]]['curs'])
 def get_curs_dollar_before(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
+    return np.nanmean(dollar.loc[train['ind_date'][i]-14:train['ind_date'][i]-8]['curs'])
 
 
 train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
@@ -102,7 +102,7 @@ train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar
 val['euro_curs_cur']=val['ind_date'].apply(lambda x: get_curs_euro_now(x))
 val['euro_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_euro_before(x))
 val['dollar_curs_cur']=val['ind_date'].apply(lambda x: get_curs_dollar_now(x))
-val['dollar_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_dollar_before(x))'''
+val['dollar_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_dollar_before(x))
 
 
 
