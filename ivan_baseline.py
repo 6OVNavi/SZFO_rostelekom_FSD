@@ -14,6 +14,9 @@ seed_everything(seed)
 
 train=pd.read_csv('train.csv',sep=';')
 val=pd.read_csv('test.csv',sep=';')
+
+
+
 print()
 euro=pd.read_excel('euro.xlsx')
 dollar=pd.read_excel('dollar.xlsx')
@@ -85,16 +88,18 @@ dollar=dollar.set_index('ind_date')
 
 def get_curs_euro_now(ind_date):
     #print(euro.loc[ind_date-3].shift(7))
-    return np.nanmean(euro.loc[train['ind_date'][i]-7:train['ind_date'][i]]['curs'])
+    return np.nanmean(euro.loc[train['ind_date'][ind_date]-7:train['ind_date'][ind_date]]['curs'])
 def get_curs_euro_before(ind_date):
-    return np.nanmean(euro.loc[train['ind_date'][i]-14:train['ind_date'][i]-8]['curs'])
+    return np.nanmean(euro.loc[train['ind_date'][ind_date]-14:train['ind_date'][ind_date]-8]['curs'])
 def get_curs_dollar_now(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][i]-7:train['ind_date'][i]]['curs'])
+    return np.nanmean(dollar.loc[train['ind_date'][ind_date]-7:train['ind_date'][ind_date]]['curs'])
 def get_curs_dollar_before(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][i]-14:train['ind_date'][i]-8]['curs'])
+    return np.nanmean(dollar.loc[train['ind_date'][ind_date]-14:train['ind_date'][ind_date]-8]['curs'])
 
 
 train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
+print(train['euro_curs_cur'].value_counts())
+print(train['ind_date'].value_counts())
 train['euro_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_euro_before(x))
 train['dollar_curs_cur']=train['ind_date'].apply(lambda x: get_curs_dollar_now(x))
 train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar_before(x))
