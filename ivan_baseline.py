@@ -81,6 +81,8 @@ for col in add_columns:
 dollar = dollar.sort_values(by='ind_date')
 dollar=dollar.set_index('ind_date')
 
+
+
 '''def get_curs_euro_now(ind_date):
     #print(euro.loc[ind_date-3].shift(7))
     return np.nanmean(euro.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
@@ -95,27 +97,15 @@ def get_curs_dollar_before(ind_date):
 train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
 train['euro_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_euro_before(x))
 train['dollar_curs_cur']=train['ind_date'].apply(lambda x: get_curs_dollar_now(x))
-train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar_before(x))'''
+train['dollar_curs_last_week']=train['ind_date'].apply(lambda x: get_curs_dollar_before(x))
 
-'''train['euro_curs_cur']=0
-train['euro_curs_last_week']=0
+val['euro_curs_cur']=val['ind_date'].apply(lambda x: get_curs_euro_now(x))
+val['euro_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_euro_before(x))
+val['dollar_curs_cur']=val['ind_date'].apply(lambda x: get_curs_dollar_now(x))
+val['dollar_curs_last_week']=val['ind_date'].apply(lambda x: get_curs_dollar_before(x))'''
 
-train['dollar_curs_cur']=0
-train['dollar_curs_last_week']=0
-for i in range(len(train)):
-    train['euro_curs_cur'][i]=np.nanmean(euro.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
-    train['euro_curs_last_week'][i]=np.nanmean(euro.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
 
-    train['dollar_curs_cur'][i]=np.nanmean(dollar.loc[train['ind_date'][i]-3:train['ind_date'][i]+4]['curs'])
-    train['dollar_curs_last_week'][i]=np.nanmean(dollar.loc[train['ind_date'][i]-11:train['ind_date'][i]-4]['curs'])
-print(len(train[train['euro_curs_cur']>0]))'''
-#for row in train:
 
-#train=train[train['curs']>0]
-#print(train)
-#print(len(train))
-print(train)
-#exit(0)
 train.subject_type.replace({"Автономный Округ": 'Республика',
                            "Автономная Область": 'Республика',
                            "Край": 'Область',
@@ -144,12 +134,18 @@ for i in range(len(train.columns)):
     a = a / len(train) * 100
     # print(train.columns[i])
     # print(a)
-    if a > 75 and train.columns[i] not in ['subject_or_city','label']:
+    if a > 75 and train.columns[i] not in ['subject_or_city','label','euro_curs_cur','euro_curs_last_week','dollar_curs_cur','dollar_curs_last_week']:
         to_drop.append(train.columns[i])
 
 train = train.drop(columns=to_drop)
 val = val.drop(columns=to_drop)
-print(list(train.columns))
+
+to_drop = []
+for i in train.columns:
+    if (train[i].isna().sum() > len(train) * 0.15):
+        to_drop.append(i)
+train = train.drop(columns=to_drop)
+val = val.drop(columns=to_drop)
 
 for f in f_cols:
     if f in train.columns:
@@ -199,51 +195,3 @@ from sklearn.metrics import precision_score, accuracy_score,recall_score
 print(precision_score(y_val,pred),'-------precision')
 print(accuracy_score(y_val,pred),'-------accuracy')
 print(recall_score(y_val,pred),'-------recall')
-'''X_temp=X_train.merge(y_train,on='ID')
-
-X1=X_temp[X_temp['label']==1]
-X2=X_temp[X_temp['label']==0]
-fraction=len(X2)//len(X1)
-val_tests=np.zeros(len(X_val))
-#pred=np.zeros(len(test))
-print(len(X1),len(X2),'-@@-')
-
-X_val=X_val.drop('ID',axis=1)
-
-
-
-#model = CatBoostClassifier(iterations=300, use_best_model=True, eval_metric='Precision', random_state=seed,learning_rate=0.001)
-
-best_its=[]
-
-for z in range(fraction):
-    X2_2=X2[z*len(X1):(z+1)*len(X1)]
-    X_fin=pd.concat([X1,X2_2])
-    print(z*len(X1),(z+1)*len(X1))
-    X_tr=X_fin.drop(columns=y_train.columns)
-    y_tr=X_fin.drop(columns=X_train.columns)
-
-    model = CatBoostClassifier(iterations=300, use_best_model=True, eval_metric='Precision', random_state=seed,learning_rate=0.001,)
-
-    model.fit(X_tr,y_tr['label'],eval_set=(X_val,y_val['label']),verbose=0)
-    val_test=np.array(model.predict(X_val))
-    val_tests=val_test+val_tests
-
-    #test_pr=model.predict(test)
-    #pred=pred+test_pr
-    best_its.append(
-        (model.best_score_['learn']['Precision'], model.best_score_['validation']['Precision'],
-         model.best_iteration_))
-val_tests=val_tests/fraction
-val_tests=list(map(lambda x: round(x),val_tests))
-print()
-
-
-
-print(precision_score(y_val['label'],val_tests),'-------precision')
-print(best_its)
-#pred=pred/fraction
-#pred = list(map(lambda x: round(x), pred))
-'''
-
-
