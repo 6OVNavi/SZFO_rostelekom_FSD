@@ -87,14 +87,13 @@ dollar=dollar.set_index('ind_date')
 
 
 def get_curs_euro_now(ind_date):
-    #print(euro.loc[ind_date-3].shift(7))
-    return np.nanmean(euro.loc[train['ind_date'][ind_date]-7:train['ind_date'][ind_date]]['curs'])
+    return np.nanmean(euro.loc[ind_date-7:ind_date]['curs'])
 def get_curs_euro_before(ind_date):
-    return np.nanmean(euro.loc[train['ind_date'][ind_date]-14:train['ind_date'][ind_date]-8]['curs'])
+    return np.nanmean(euro.loc[ind_date-14:ind_date-8]['curs'])
 def get_curs_dollar_now(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][ind_date]-7:train['ind_date'][ind_date]]['curs'])
+    np.nanmean(dollar.loc[ind_date-7:ind_date]['curs'])
 def get_curs_dollar_before(ind_date):
-    return np.nanmean(dollar.loc[train['ind_date'][ind_date]-14:train['ind_date'][ind_date]-8]['curs'])
+    np.nanmean(dollar.loc[ind_date-14:ind_date-8]['curs'])
 
 
 train['euro_curs_cur']=train['ind_date'].apply(lambda x: get_curs_euro_now(x))
