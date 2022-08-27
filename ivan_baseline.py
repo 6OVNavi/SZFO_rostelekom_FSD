@@ -14,7 +14,7 @@ seed_everything(seed)
 
 train=pd.read_csv('train.csv',sep=';')
 val=pd.read_csv('test.csv',sep=';')
-
+print()
 euro=pd.read_excel('euro.xlsx')
 dollar=pd.read_excel('dollar.xlsx')
 print(euro)
@@ -126,7 +126,7 @@ val.loc[val['subject_type']=='Город','subject_or_city']='city'
 f_cols=['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17', 'f18', 'f19', 'f20', 'f21', 'f22', 'f23', 'f24', 'f25', 'f26', 'f27', 'f28', 'f29', 'f30']
 
 maybe_imbalance=['f30','f23','f14','f5']
-
+kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
 #train=train.drop(columns=maybe_imbalance)
 to_drop = []
 for i in range(len(train.columns)):
@@ -134,7 +134,8 @@ for i in range(len(train.columns)):
     a = a / len(train) * 100
     # print(train.columns[i])
     # print(a)
-    if a > 75 and train.columns[i] not in ['subject_or_city','label','euro_curs_cur','euro_curs_last_week','dollar_curs_cur','dollar_curs_last_week']:
+    if a > 75 and train.columns[i] not in ['subject_or_city','label','euro_curs_cur','euro_curs_last_week',
+                                           'dollar_curs_cur','dollar_curs_last_week',*kitties]:
         to_drop.append(train.columns[i])
 
 train = train.drop(columns=to_drop)
@@ -154,7 +155,16 @@ for f in f_cols:
         val[f] = val[f].fillna(
             val.groupby('ind_date')[f].transform('median'))
 
-kitties=['subject_type','subject_name','city_name','subject_or_city','hex']
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+print(train.columns)
+'''sns.set_theme(font_scale=0.6)
+plt.figure(figsize=(10, 10))
+sns.heatmap(train.corr(), annot=True,linewidths=1)
+plt.tight_layout()
+plt.show()
+'''
 train=pd.get_dummies(train,columns=kitties)
 val=pd.get_dummies(val,columns=kitties)
 
@@ -164,18 +174,10 @@ for i in val.columns:
 for i in train.columns:
     if i not in val.columns:
         val[i]=0
-#val=val.drop('label',axis=1)
 
 train=train.sort_index(axis=1)
 val=val.sort_index(axis=1)
 
-print(list(train.columns))
-print(list(val.columns))
-from sklearn.preprocessing import LabelEncoder
-
-'''le=LabelEncoder()
-le.fit(train['hex'])
-train['hex']=le.transform(train['hex'])'''
 
 
 X_train=train.drop('label',axis=1)
