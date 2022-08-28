@@ -1,6 +1,6 @@
 Решение команды FSD
 
-Файлы: warship.csv, warplane.csv, warface.csv, tanks.csv, lostark.csv, alchemist.csv - содержат инфу по онлайну в разных играх.
+Файлы: warship.csv, warplane.csv, warface.csv, tanks.csv, lostark.csv, alchemist.csv - содержат инфу по онлайну в разных играх (https://steamdb.info/).
 
 final sol.ipynb - код для обучения модели
 
